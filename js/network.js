@@ -5,7 +5,7 @@ var s = 0;;
 var clockId;
 var runViz = null;
 var pauseViz = false;
-var networkname = "0";
+var networkname = "demo";
 var mockerlist  = [];
 var mockerlist_generated = false;
 var eventSource = null;
@@ -35,22 +35,26 @@ var selectedSim = defaultSim;
 $(document).ready(function() {
   
   $('#pause').prop("disabled",true);
-  $('#play').prop("disabled",true);
+  $('#play').prop("disabled",false);
 
   //click handlers
-  $('#power').on('click',function(){ 
-    initializeServer(networkname); 
-    $('#play').prop("disabled",false);
-    $('#power').prop("disabled",true);
-  });
-
   $('#play').on('click',function(){ 
     if (pauseViz) {
       pauseViz = false;
       startTimer();
       $("#status-messages").hide();
     } else {
-      startViz(); 
+      $.ajax({
+        url:    BACKEND_URL + "/networks/" + networkname,
+        method: "DELETE"
+      }).then(
+        function() {
+          initializeServer(networkname);
+        },
+        function() {
+          initializeServer(networkname);
+        }
+      );
     }
     $('#play').prop("disabled",true);
     $('#pause').prop("disabled",false);
@@ -96,6 +100,7 @@ $(document).ready(function() {
 function setupEventStream() {
   eventSource = new EventSource(BACKEND_URL + '/networks/' + networkname + "/events");
 
+  eventSource.onopen = startViz;
 
   eventSource.addEventListener("network", function(e) {
     var event = JSON.parse(e.data);
